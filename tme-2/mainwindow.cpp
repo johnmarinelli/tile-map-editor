@@ -32,21 +32,17 @@ MainWindow::MainWindow(QWidget *parent) :
     mWindowHeight = QApplication::desktop()->availableGeometry().height();
     this->setGeometry(0, 0, mWindowWidth, mWindowHeight);
 
-    resizeCurrentTileFrame();
     resizeTileSelect();
     createNewCanvasArea();
+    mCurrentTileFrame = new CurrentTileFrame(this);
+    resizeCurrentTileFrame();
 
     setTileSheetTabs();
-    setCurrentTileFrameLayout();
 
     /* connect canvas to tile information frame */
     connect(mSFMLView, SIGNAL(clicked(const Tile&)), this, SLOT(sendTileInformation(const Tile&)));
 
-    /* connect tile information frame to current tile selected */
-    connect(ui->currentTileTraversable, SIGNAL(currentIndexChanged(const QString&)),
-        this, SLOT(sendTraversableInformation(const QString&)));
-
-    /* connect tab switching to change mTileSheet */
+    /* connect tab switching to change mTileSheet*/
     connect(ui->tileSheetTabs, SIGNAL(currentChanged(int)), mSFMLView, SLOT(setCurrentTileSheetIndex(int)));
     connect(ui->tileSheetTabs, SIGNAL(currentChanged(int)), this, SLOT(setCurrentTileSheetIndex(int)));
 
@@ -140,10 +136,9 @@ void MainWindow::createNewCanvasArea(int width, int height, int tileWidth, int t
                                  QSize(width, height),
                                  mTileSheetHandler,
                                  tileWidth, tileHeight);
-
-        mSFMLView->show();
     }
 
+    mSFMLView->show();
     mSFMLView->setObjectName("Canvas");
     setCanvasScrollAreaLayout(sfmlScrollArea, sfmlScrollAreaWidget);
     resizeCanvasScrollArea(sfmlFrame, sfmlScrollArea, sfmlScrollAreaWidget);
@@ -166,44 +161,12 @@ void MainWindow::createNewCanvasArea(int width, int height, int tileWidth, int t
 
     /* reconnect canvas to tile information frame */
     connect(mSFMLView, SIGNAL(clicked(const Tile&)), this, SLOT(sendTileInformation(const Tile&)));
+
 }
 
 void MainWindow::sendTileInformation(const Tile& tile)
 {
-    int xOffset = tile.getTileSheetCoords().x;
-    int yOffset = tile.getTileSheetCoords().y;
-    int tileWidth = tile.getDimensions().x;
-    int tileHeight = tile.getDimensions().y;
-
-    int destWidth = ui->currentTileGraphic->geometry().width();
-    int destHeight = ui->currentTileGraphic->geometry().height();
-
-    /* clip tilesheet to x, y, tilewidth, tileheight */
-    QPixmap gfx = mTileSheetHandler.get(tile.getTileSheetIndex())->getQtTileSheet().copy(xOffset, yOffset, tileWidth, tileHeight)
-                    .scaled(QSize(destWidth, destHeight), Qt::IgnoreAspectRatio);
-
-    ui->currentTileGraphic->setPixmap(gfx);
-
-    /* set coordinate texts */
-    std::string worldCoordText = "World Position "                   +
-                                 std::to_string(tile.getCoords().x)  +
-                                 ", "                                +
-                                 std::to_string(tile.getCoords().y);
-
-    ui->currentTileWorldCoords->setText(QString(worldCoordText.c_str()));
-
-    std::string tileSheetCoordText = "Tilesheet Position "           +
-                                     std::to_string(xOffset)         +
-                                     ", "                            +
-                                     std::to_string(yOffset);
-
-    ui->currentTileTileSheetCoords->setText(QString(tileSheetCoordText.c_str()));
-
-    /* set if tile is traversable or not */
-    int index = ui->currentTileTraversable->findText(boolToString(tile.getTraversable()));
-    if(-1 != index) {
-        ui->currentTileTraversable->setCurrentIndex(index);
-    }
+    mCurrentTileFrame->receiveTileInformation(tile, mTileSheetHandler);
 }
 
 void MainWindow::sendTraversableInformation(const QString& str)
@@ -259,21 +222,6 @@ void MainWindow::setTileSelectLayout(QScrollArea* scrollArea, QWidget* scrollAre
     }
 }
 
-void MainWindow::setCurrentTileFrameLayout()
-{
-    /* layout for current tile frame */
-    QGridLayout* layout = new QGridLayout(ui->currentTileFrame);
-    ui->currentTileFrame->setLayout(layout);
-    ui->currentTileGraphic->setFixedSize(128, 128);
-    layout->addWidget(ui->currentTileGraphic, 0, 0, 5, 5, Qt::AlignTop);
-
-    /* set coordinate texts & traversable combo box */
-    layout->addWidget(ui->currentTileWorldCoords, 2, 0, 5, 5, Qt::AlignLeft);
-    layout->addWidget(ui->currentTileTileSheetCoords, 3, 0, 5, 5, Qt::AlignLeft);
-    layout->addWidget(ui->traversableLabel, 4, 0, 5, 5, Qt::AlignLeft);
-    layout->addWidget(ui->currentTileTraversable, 4, 1, 5, 5, Qt::AlignRight);
-}
-
 void MainWindow::saveMap()
 {
     /* open up a save file dialog */
@@ -310,12 +258,13 @@ void MainWindow::setCurrentTileSheetIndex(int index)
 
 void MainWindow::resizeCurrentTileFrame()
 {
-    ui->currentTileFrame->setGeometry(0, 0, mWindowWidth / 3, mWindowHeight / 2);
+    //ui->currentTileFrame->setGeometry(0, 0, mWindowWidth / 3, mWindowHeight / 2);
+    mCurrentTileFrame->setGeometry(0, ui->menubar->geometry().height(), mWindowWidth / 3, mWindowHeight / 4);
 }
 
 void MainWindow::resizeTileSelect()
 {
-    ui->tileSheetTabs->setGeometry(0, mWindowHeight / 2, mWindowWidth / 3, mWindowHeight / 2);
+    ui->tileSheetTabs->setGeometry(0, mWindowHeight / 3, mWindowWidth / 3, mWindowHeight / 2);
 }
 
 void MainWindow::resizeSFMLFrame(QFrame* frame)
@@ -345,14 +294,19 @@ void MainWindow::setCanvasScrollAreaLayout(QScrollArea* scrollArea, QWidget* scr
 
 void MainWindow::resizeCanvasScrollArea(QFrame* frame, QScrollArea* scrollArea, QWidget* scrollAreaWidget)
 {
+    std::cout << "entering resize canvas scroll area" << std::endl;
     QRect SFMLFrameRect = frame->geometry();
 
     /* size of actual scroll area */
     scrollArea->move(0, 0);
     scrollArea->resize(SFMLFrameRect.width(), SFMLFrameRect.height() - 50);
 
+    std::cout << "Scroll area geometry: " << scrollArea->geometry().width() << scrollArea->geometry().height() << std::endl;
+
     /* size of scroll area contents; determines scroll bars */
     scrollAreaWidget->resize(mSFMLView->size());
+
+    std::cout << "Scroll area widget geometry: " << scrollAreaWidget->geometry().width() << scrollAreaWidget->geometry().height() << std::endl;
 }
 
 MainWindow::~MainWindow()

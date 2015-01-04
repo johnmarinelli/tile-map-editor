@@ -5,6 +5,7 @@
 #include "jpushbutton.h"
 #include "tilesheethandler.h"
 #include "tile.h"
+#include "currenttileframe.h"
 
 #include <QMainWindow>
 #include <QRadioButton>
@@ -26,7 +27,6 @@ public:
     explicit MainWindow(QWidget *parent = 0);
 
     void setTileSelectLayout(QScrollArea* scrollArea, QWidget* scrollAreaContents, const std::shared_ptr<const TileSheet>& tileSheet);
-    void setCurrentTileFrameLayout();
 
     void resizeCurrentTileFrame();
     void resizeTileSelect();
@@ -53,6 +53,7 @@ private:
 
     QFrame* mInputFrame;
     MyCanvas* mSFMLView;
+    CurrentTileFrame* mCurrentTileFrame;
 
     TileSheetHandler mTileSheetHandler;
     unsigned short mTileSheetIndex;
