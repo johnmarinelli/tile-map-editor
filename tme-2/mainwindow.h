@@ -12,6 +12,7 @@
 #include <QFrame>
 #include <QSignalMapper>
 #include <QScrollArea>
+#include <QGridLayout>
 
 #include <vector>
 
@@ -50,6 +51,8 @@ private:
     void createNewCanvasArea(int width=0, int height=0, int tileWidth=0, int tileHeight=0);
 
     Ui::MainWindow *ui;
+
+    QGridLayout* mLayout;
 
     QFrame* mInputFrame;
     MyCanvas* mSFMLView;
