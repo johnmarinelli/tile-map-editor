@@ -70,6 +70,7 @@ public:
     void reset();
     void setTileDimensions(int tileWidth, int tileHeight);
     void setDimensions(int width, int height);
+    const TileMap& getTileMap() const;
 
     void saveMap(const QString& path);
 

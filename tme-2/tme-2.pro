@@ -29,7 +29,8 @@ SOURCES += main.cpp\
     tilemap.cpp \
     utility.cpp \
     jsoncpp.cpp \
-    currenttileframe.cpp
+    currenttileframe.cpp \
+    canvasframe.cpp
 
 HEADERS  += mainwindow.h \
     qsfmlcanvas.h \
@@ -45,7 +46,8 @@ HEADERS  += mainwindow.h \
     tilemap.h \
     json/json.h \
     json/json-forwards.h \
-    currenttileframe.h
+    currenttileframe.h \
+    canvasframe.h
 
 FORMS    += \
     mainwindow.ui

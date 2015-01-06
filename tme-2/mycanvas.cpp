@@ -156,13 +156,18 @@ void MyCanvas::mousePressEvent(QMouseEvent* event)
     else if(event->button() & Qt::RightButton) {
         /* select tile */
         if(tile != mTiles.end()) {
-            //mSelectedTile = &(tile->second);
-            mTileMap.removeTile(&(tile->second));
-            mTiles.erase(tile);
+            mSelectedTile = &(tile->second);
+            //mTileMap.removeTile(&(tile->second));
+            //mTiles.erase(tile);
         }
     }
 
     emit clicked();
+}
+
+const TileMap& MyCanvas::getTileMap() const
+{
+    return mTileMap;
 }
 
 QSize MyCanvas::sizeHint() const

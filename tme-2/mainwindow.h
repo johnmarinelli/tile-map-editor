@@ -3,9 +3,10 @@
 
 #include "mycanvas.h"
 #include "jpushbutton.h"
-#include "tilesheethandler.h"
 #include "tile.h"
 #include "currenttileframe.h"
+#include "canvasframe.h"
+#include "utility.h"
 
 #include <QMainWindow>
 #include <QRadioButton>
@@ -32,8 +33,6 @@ public:
     void resizeCurrentTileFrame();
     void resizeTileSelect();
     void resizeSFMLFrame(QFrame* frame);
-    void setCanvasScrollAreaLayout(QScrollArea* scrollArea, QWidget* scrollAreaWidgetContents);
-    void resizeCanvasScrollArea(QFrame* frame, QScrollArea* scrollArea, QWidget* scrollAreaWidget);
 
     ~MainWindow();
 
@@ -48,21 +47,18 @@ private slots:
 private:
     void setTileSheetTabs();
     void setTileSelectButtons();
-    void createNewCanvasArea(int width=0, int height=0, int tileWidth=0, int tileHeight=0);
+    void createNewCanvasArea(int width=0, int height=0, int tileWidth=DEFAULT_TILE_WIDTH, int tileHeight=DEFAULT_TILE_HEIGHT);
 
     Ui::MainWindow *ui;
 
     QGridLayout* mLayout;
 
     QFrame* mInputFrame;
-    MyCanvas* mSFMLView;
     CurrentTileFrame* mCurrentTileFrame;
+    CanvasFrame* mCanvasFrame;
 
     TileSheetHandler mTileSheetHandler;
     unsigned short mTileSheetIndex;
-
-    int mTileWidth;
-    int mTileHeight;
 
     int mWindowWidth;
     int mWindowHeight;

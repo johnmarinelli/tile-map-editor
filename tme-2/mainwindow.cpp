@@ -20,10 +20,9 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     mLayout(new QGridLayout),
-    mSFMLView(nullptr),
+    mCurrentTileFrame(nullptr),
+    mCanvasFrame(nullptr),
     mTileSheetIndex(0),
-    mTileWidth(DEFAULT_TILE_WIDTH),
-    mTileHeight(DEFAULT_TILE_HEIGHT),
     mWindowWidth(0),
     mWindowHeight(0)
 {
@@ -48,10 +47,10 @@ MainWindow::MainWindow(QWidget *parent) :
     mLayout->setColumnStretch(2, 70);
 
     /* connect canvas to tile information frame */
-    connect(mSFMLView, SIGNAL(clicked(const Tile&)), this, SLOT(sendTileInformation(const Tile&)));
+    connect(mCanvasFrame->getCanvas(), SIGNAL(clicked(const Tile&)), this, SLOT(sendTileInformation(const Tile&)));
 
     /* connect tab switching to change mTileSheet*/
-    connect(ui->tileSheetTabs, SIGNAL(currentChanged(int)), mSFMLView, SLOT(setCurrentTileSheetIndex(int)));
+    connect(ui->tileSheetTabs, SIGNAL(currentChanged(int)), mCanvasFrame->getCanvas(), SLOT(setCurrentTileSheetIndex(int)));
     connect(ui->tileSheetTabs, SIGNAL(currentChanged(int)), this, SLOT(setCurrentTileSheetIndex(int)));
 
     /* connect new file option to new map dialog */
@@ -105,57 +104,23 @@ void MainWindow::setTileSheetTabs()
  */
 void MainWindow::createNewCanvasArea(int width, int height, int tileWidth, int tileHeight)
 {
-    QFrame* sfmlFrame = new QFrame(ui->centralwidget);
-    QScrollArea* sfmlScrollArea = new QScrollArea(sfmlFrame);
-    QWidget* sfmlScrollAreaWidget = new QWidget(sfmlScrollArea);
-    sfmlScrollArea->setWidget(sfmlScrollAreaWidget);
+    if(nullptr != mCanvasFrame) delete mCanvasFrame;
+    mCanvasFrame = new CanvasFrame(ui->centralwidget);
 
-    sfmlFrame->setObjectName("SFMLFrame");
-    sfmlScrollArea->setObjectName("SFMLScrollArea");
-    sfmlScrollAreaWidget->setObjectName("SFMLScrollAreaWidget");
-    resizeSFMLFrame(sfmlFrame);
+    resizeSFMLFrame(mCanvasFrame);
 
-    sfmlFrame->setStyleSheet("background-color:blue");
+    if(0 == width || 0 == height) {
+        width = getNearestMultiple(mCanvasFrame->size().width(), tileWidth);
+        height = getNearestMultiple(mCanvasFrame->size().height(), tileHeight);
+    }
+
+    mCanvasFrame->init(QPoint(0, 0), QSize(width, height), mTileSheetHandler, tileWidth, tileHeight);
+    mCanvasFrame->setStyleSheet("background-color:blue");
 
     /* add scroll area to main layout */
-    mLayout->addWidget(sfmlFrame, 0, 2, 2, 1);
-    std::cout << "Sfmlframe: " << sfmlFrame->geometry().width() << "\t" << sfmlFrame->geometry().height() << std::endl;
+    mLayout->addWidget(mCanvasFrame, 0, 2, 2, 1);
 
-    if(nullptr == mSFMLView) {
-        mSFMLView = new MyCanvas(sfmlScrollAreaWidget, QPoint(0,0),
-                                 QSize(sfmlFrame->geometry().width(), sfmlFrame->geometry().height()),
-                                 mTileSheetHandler,
-                                 mTileWidth, mTileHeight);
-    }
-    else {
-        width = getNearestMultiple(width, tileWidth);
-        height = getNearestMultiple(height, tileHeight);
-
-        QFrame* frame = this->findChild<QFrame*> ("SFMLFrame");
-        delete mSFMLView;
-        mSFMLView = nullptr;
-        delete frame;
-        frame = nullptr;
-
-        sfmlFrame->show();
-        sfmlScrollArea->show();
-        sfmlScrollAreaWidget->show();
-
-        sfmlScrollArea->resize(width, height);
-        sfmlScrollAreaWidget->resize(width, height);
-
-        mSFMLView = new MyCanvas(sfmlScrollAreaWidget, QPoint(0,0),
-                                 QSize(width, height),
-                                 mTileSheetHandler,
-                                 tileWidth, tileHeight);
-
-        //mSFMLView->show();
-    }
-    mSFMLView->setObjectName("canvas");
-
-    /* add mSFMLView to scroll area */
-    setCanvasScrollAreaLayout(sfmlScrollArea, sfmlScrollAreaWidget);
-    resizeCanvasScrollArea(sfmlFrame, sfmlScrollArea, sfmlScrollAreaWidget);
+    MyCanvas* canvas = mCanvasFrame->getCanvas();
 
     /* wire up buttons to canvas */
     auto tabs = this->findChildren<QWidget*> ("tileSheetTab");
@@ -164,17 +129,16 @@ void MainWindow::createNewCanvasArea(int width, int height, int tileWidth, int t
         auto buttons = tab->findChildren<JPushButton*> ("tileSelectButton");
 
         for(const auto& button: buttons) {
-            std::cout << button->getClipBounds().left << std::endl;
             connect(button, SIGNAL(clicked(const sf::Rect<int>&, const std::shared_ptr<const TileSheet>)),
-                mSFMLView, SLOT(setCurrentTile(const sf::Rect<int>&, const std::shared_ptr<const TileSheet>)));
+                canvas, SLOT(setCurrentTile(const sf::Rect<int>&, const std::shared_ptr<const TileSheet>)));
         }
     }
 
     /* reconnect tab switching to change mTileSheet */
-    connect(ui->tileSheetTabs, SIGNAL(currentChanged(int)), mSFMLView, SLOT(setCurrentTileSheetIndex(int)));
+    connect(ui->tileSheetTabs, SIGNAL(currentChanged(int)), canvas, SLOT(setCurrentTileSheetIndex(int)));
 
     /* reconnect canvas to tile information frame */
-    connect(mSFMLView, SIGNAL(clicked(const Tile&)), this, SLOT(sendTileInformation(const Tile&)));
+    connect(canvas, SIGNAL(clicked(const Tile&)), this, SLOT(sendTileInformation(const Tile&)));
 }
 
 void MainWindow::sendTileInformation(const Tile& tile)
@@ -190,7 +154,7 @@ void MainWindow::sendTraversableInformation(const QString& str)
         isTraversable = true;
     }
 
-    mSFMLView->setCurrentTileTraversable(isTraversable);
+    mCanvasFrame->getCanvas()->setCurrentTileTraversable(isTraversable);
 }
 
 void MainWindow::setTileSelectLayout(QScrollArea* scrollArea, QWidget* scrollAreaContents, const std::shared_ptr<const TileSheet>& tileSheet)
@@ -198,20 +162,25 @@ void MainWindow::setTileSelectLayout(QScrollArea* scrollArea, QWidget* scrollAre
     int tileSheetCols = tileSheet->getColumns();
     int tileSheetRows = tileSheet->getRows();
 
+    int tileWidth = mCanvasFrame->getCanvas()->getTileMap().getTileWidth();
+    int tileHeight = mCanvasFrame->getCanvas()->getTileMap().getTileHeight();
+
     /* layout for scrollarea */
     QGridLayout* layout = new QGridLayout(scrollAreaContents);
     scrollAreaContents->setLayout(layout);
 
-    int gridCols = std::floor(scrollArea->geometry().width() / mTileWidth);
-    int gridRows = std::floor(scrollArea->geometry().height() / mTileHeight);
+    int gridCols = std::floor(scrollArea->geometry().width() / tileWidth);
+    int gridRows = std::floor(scrollArea->geometry().height() / tileHeight);
+
+    MyCanvas* canvas = mCanvasFrame->getCanvas();
 
     for(int i = 0; i < tileSheetRows; ++i) {
         for(int j = 0; j < tileSheetCols; ++j) {
-            int xOffset = (j*mTileWidth)+j;
-            int yOffset = (i*mTileHeight)+i;
+            int xOffset = (j*tileWidth)+j;
+            int yOffset = (i*tileHeight)+i;
 
             /* clip tilesheet to x, y, tilewidth, tileheight for tile icon*/
-            QPixmap tile = tileSheet->getQtTileSheet().copy(xOffset, yOffset, mTileWidth, mTileHeight);
+            QPixmap tile = tileSheet->getQtTileSheet().copy(xOffset, yOffset, tileWidth, tileHeight);
 
             /* create new push button */
             JPushButton* button = new JPushButton(this, tileSheet);
@@ -222,11 +191,11 @@ void MainWindow::setTileSelectLayout(QScrollArea* scrollArea, QWidget* scrollAre
 
             /* connect tile selector to canvas */
             connect(button, SIGNAL(clicked(const sf::Rect<int>&, const std::shared_ptr<const TileSheet>)),
-                mSFMLView, SLOT(setCurrentTile(const sf::Rect<int>&, const std::shared_ptr<const TileSheet>)));
+                canvas, SLOT(setCurrentTile(const sf::Rect<int>&, const std::shared_ptr<const TileSheet>)));
 
             /* set button's icon */
             button->setIcon(QIcon(tile));
-            button->setMaximumSize(mTileWidth, mTileHeight);
+            button->setMaximumSize(tileWidth, tileHeight);
 
             int col = i%gridRows;
             int row = j%gridCols;
@@ -240,7 +209,7 @@ void MainWindow::saveMap()
     /* open up a save file dialog */
     QString path = QFileDialog::getSaveFileName(this, "Save File", QCoreApplication::applicationDirPath());
 
-    mSFMLView->saveMap(path);
+    mCanvasFrame->getCanvas()->saveMap(path);
 }
 
 void MainWindow::showNewMapDialog()
@@ -286,41 +255,6 @@ void MainWindow::resizeSFMLFrame(QFrame* frame)
     int width = std::floor(mWindowWidth * (.66));
     frame->resize(width, mWindowHeight-100);
     frame->setMaximumSize(width, mWindowHeight-100);
-}
-
-/*
- * canvas scroll area design depends on mSFMLView
- */
-void MainWindow::setCanvasScrollAreaLayout(QScrollArea* scrollArea, QWidget* scrollAreaWidgetContents)
-{
-    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-
-    removeLayout(scrollAreaWidgetContents->layout());
-
-    QGridLayout* layout = new QGridLayout(scrollAreaWidgetContents);
-    scrollAreaWidgetContents->setLayout(layout);
-    scrollArea->setWidgetResizable(false);
-    layout->addWidget(mSFMLView, 0, 0);
-}
-
-void MainWindow::resizeCanvasScrollArea(QFrame* frame, QScrollArea* scrollArea, QWidget* scrollAreaWidget)
-{
-    std::cout << "entering resize canvas scroll area" << std::endl;
-    QRect SFMLFrameRect = frame->geometry();
-
-    /* size of actual scroll area */
-    //scrollArea->move(0, 0);
-    scrollArea->resize(SFMLFrameRect.width(), SFMLFrameRect.height());
-    scrollArea->setStyleSheet("background-color:red");
-
-    std::cout << "Scroll area geometry: " << scrollArea->geometry().width() << "\t" << scrollArea->geometry().height() << std::endl;
-
-    /* size of scroll area contents; determines scroll bars */
-    scrollAreaWidget->resize(mSFMLView->size());
-    scrollAreaWidget->setStyleSheet("background-color:orange");
-
-    std::cout << "Scroll area widget geometry: " << scrollAreaWidget->geometry().width() << "\t" << scrollAreaWidget->geometry().height() << std::endl;
 }
 
 MainWindow::~MainWindow()
