@@ -64,6 +64,12 @@ void MainWindow::setTileSheetTabs()
 {
     /* add all tilesheets to mTileSheetHandler */
     QDir assetsDir("../tme-2/assets");
+
+    if(!assetsDir.exists()) {
+        std::string debug = "Directory " + assetsDir.currentPath().toStdString() + " doesn't exist.";
+        qDebug(debug.c_str());
+    }
+
     QFileInfoList fileInfoList = assetsDir.entryInfoList(QDir::NoDotAndDotDot|QDir::AllEntries);
 
     /* set up tilesheet tabs */
