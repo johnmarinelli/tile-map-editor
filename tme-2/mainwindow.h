@@ -6,6 +6,7 @@
 #include "tile.h"
 #include "currenttileframe.h"
 #include "canvasframe.h"
+#include "tileselecttabwidget.h"
 #include "utility.h"
 
 #include <QMainWindow>
@@ -56,6 +57,7 @@ private:
     QFrame* mInputFrame;
     CurrentTileFrame* mCurrentTileFrame;
     CanvasFrame* mCanvasFrame;
+    TileSelectTabWidget* mTileSelector;
 
     TileSheetHandler mTileSheetHandler;
     unsigned short mTileSheetIndex;

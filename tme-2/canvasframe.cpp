@@ -20,6 +20,7 @@ void CanvasFrame::initCanvas(const QPoint &pos, const QSize &size, const TileShe
 {
     mCanvas = new MyCanvas(mScrollAreaWidget, pos, size, tsh, tileWidth, tileHeight);
     mCanvas->setObjectName("canvas");
+    mCanvas->setLines();
 }
 
 void CanvasFrame::setScrollAreaLayout()

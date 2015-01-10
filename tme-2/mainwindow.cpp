@@ -22,26 +22,33 @@ MainWindow::MainWindow(QWidget *parent) :
     mLayout(new QGridLayout),
     mCurrentTileFrame(nullptr),
     mCanvasFrame(nullptr),
+    mTileSelector(nullptr),
     mTileSheetIndex(0),
     mWindowWidth(0),
     mWindowHeight(0)
 {
     ui->setupUi(this);
     this->setWindowState(Qt::WindowMaximized);
+
     mWindowWidth = QApplication::desktop()->availableGeometry().width();
     mWindowHeight = QApplication::desktop()->availableGeometry().height();
+
     this->setGeometry(0, 0, mWindowWidth, mWindowHeight);
+
     ui->centralwidget->setLayout(mLayout);
+
+    mTileSelector = new TileSelectTabWidget(ui->centralwidget);
 
     resizeTileSelect();
     createNewCanvasArea();
     mCurrentTileFrame = new CurrentTileFrame(this);
     resizeCurrentTileFrame();
 
-    setTileSheetTabs();
+    //setTileSheetTabs();
+    mTileSelector->setTabs(mTileSheetHandler, *mCanvasFrame->getCanvas());
 
     mLayout->addWidget(mCurrentTileFrame, 0, 1, 1, 1);
-    mLayout->addWidget(ui->tileSheetTabs, 1, 1, 1, 1);
+    mLayout->addWidget(mTileSelector, 1, 1, 1, 1);
 
     mLayout->setColumnStretch(1, 30);
     mLayout->setColumnStretch(2, 70);
@@ -49,9 +56,9 @@ MainWindow::MainWindow(QWidget *parent) :
     /* connect canvas to tile information frame */
     connect(mCanvasFrame->getCanvas(), SIGNAL(clicked(const Tile&)), this, SLOT(sendTileInformation(const Tile&)));
 
-    /* connect tab switching to change mTileSheet*/
-    connect(ui->tileSheetTabs, SIGNAL(currentChanged(int)), mCanvasFrame->getCanvas(), SLOT(setCurrentTileSheetIndex(int)));
-    connect(ui->tileSheetTabs, SIGNAL(currentChanged(int)), this, SLOT(setCurrentTileSheetIndex(int)));
+    /* connect tab switching to change mTileSheet */
+    connect(mTileSelector, SIGNAL(currentChanged(int)), mCanvasFrame->getCanvas(), SLOT(setCurrentTileSheetIndex(int)));
+    connect(mTileSelector, SIGNAL(currentChanged(int)), this, SLOT(setCurrentTileSheetIndex(int)));
 
     /* connect new file option to new map dialog */
     connect(ui->newMapAction, SIGNAL(triggered()), this, SLOT(showNewMapDialog()));
@@ -78,9 +85,11 @@ void MainWindow::setTileSheetTabs()
         int index = mTileSheetHandler.add(fileInfo.absoluteFilePath().toStdString(), QSize(32, 32));
 
         /* add a new tab with scroll area */
-        QWidget* tab = new QWidget(ui->tileSheetTabs);
+        //QWidget* tab = new QWidget(ui->tileSheetTabs);
+        QWidget* tab = new QWidget(mTileSelector);
         tab->setObjectName("tileSheetTab");
-        QRect tabViewRect = ui->tileSheetTabs->geometry();
+        //QRect tabViewRect = ui->tileSheetTabs->geometry();
+        QRect tabViewRect = mTileSelector->geometry();
 
         /* add tab's layout */
         QGridLayout* tabGridLayout = new QGridLayout(tab);
@@ -101,7 +110,8 @@ void MainWindow::setTileSheetTabs()
 
         /* set scroll area's layout */
         setTileSelectLayout(scrollArea, scrollAreaContents, mTileSheetHandler.get(index));
-        ui->tileSheetTabs->addTab(tab, QString(std::to_string(index).c_str()));
+        //ui->tileSheetTabs->addTab(tab, QString(std::to_string(index).c_str()));
+        mTileSelector->addTab(tab, QString(std::to_string(index).c_str()));
     });
 }
 
@@ -140,8 +150,11 @@ void MainWindow::createNewCanvasArea(int width, int height, int tileWidth, int t
         }
     }
 
+    /* reset tile sheet index */
+    canvas->setCurrentTileSheetIndex(mTileSelector->getCurrentTabIndex());
+
     /* reconnect tab switching to change mTileSheet */
-    connect(ui->tileSheetTabs, SIGNAL(currentChanged(int)), canvas, SLOT(setCurrentTileSheetIndex(int)));
+    connect(mTileSelector, SIGNAL(currentChanged(int)), canvas, SLOT(setCurrentTileSheetIndex(int)));
 
     /* reconnect canvas to tile information frame */
     connect(canvas, SIGNAL(clicked(const Tile&)), this, SLOT(sendTileInformation(const Tile&)));
@@ -253,7 +266,8 @@ void MainWindow::resizeCurrentTileFrame()
 
 void MainWindow::resizeTileSelect()
 {
-    ui->tileSheetTabs->resize(mWindowWidth / 3, mWindowHeight / 2);
+    //ui->tileSheetTabs->resize(mWindowWidth / 3, mWindowHeight / 2);
+    mTileSelector->resize(mWindowWidth / 3, mWindowHeight / 2);
 }
 
 void MainWindow::resizeSFMLFrame(QFrame* frame)

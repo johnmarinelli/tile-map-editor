@@ -22,6 +22,39 @@ MyCanvas::MyCanvas(QWidget *parent,
     connect(this, SIGNAL(clicked()), this, SLOT(sendSelectedTile()));
 }
 
+sf::Vector2i MyCanvas::getCoordsFromMouse(int mouseX, int mouseY)
+{
+    int tileWidth = mTileMap.getTileWidth();
+    int tileHeight = mTileMap.getTileHeight();
+
+    int x = getNearestMultiple(mouseX, tileWidth);
+    int y = getNearestMultiple(mouseY, tileHeight);
+
+    return sf::Vector2i(x, y);
+}
+
+void MyCanvas::addTile(int mouseX, int mouseY)
+{
+    int tileWidth = mTileMap.getTileWidth();
+    int tileHeight = mTileMap.getTileHeight();
+
+    sf::Vector2i coords = getCoordsFromMouse(mouseX, mouseY);
+
+    /* place tile at snapped point */
+    Tile tile(mTileSheetHandler.get(mTileSheetIndex)->getSfTileSheet(),
+              mTileSheetIndex,
+              mCurrentTileBounds,
+              coords);
+
+    tile.setTileSheetCoords(sf::Vector2i(mCurrentTileBounds.left, mCurrentTileBounds.top));
+    tile.setDimensions(sf::Vector2i(tileWidth, tileHeight));
+
+    //std::cout << "assignment operator" << std::endl;
+    mTiles[coords] = tile;
+    mSelectedTile = &(mTiles[coords]);
+    mTileMap.addTile(mTiles[coords]);
+}
+
 void MyCanvas::setLines()
 {
     int columns = std::ceil(this->size().width() / mTileMap.getTileWidth());
@@ -65,6 +98,7 @@ void MyCanvas::onUpdate()
     }
 
     for(const auto& tile : mTiles) {
+        /* for some reason using Qt5, this breaks */
         draw(tile.second.getSprite());
     }
 }
@@ -120,40 +154,19 @@ void MyCanvas::setCurrentTileSheetIndex(int index)
 
 void MyCanvas::mousePressEvent(QMouseEvent* event)
 {
-    int x = event->pos().x();
-    int y = event->pos().y();
-
-    std::cout << "clicked x " << std::to_string(x) << std::endl;
-    std::cout << "clicked y " << std::to_string(y) << std::endl;
-
-    int tileWidth = mTileMap.getTileWidth();
-    int tileHeight = mTileMap.getTileHeight();
-
-    x = getNearestMultiple(x, tileWidth);
-    y = getNearestMultiple(y, tileHeight);
-
-    sf::Vector2i coords(x, y);
-
-    /* find tile */
-    auto tile = mTiles.find(coords);
+    int mouseX = event->pos().x();
+    int mouseY = event->pos().y();
 
     if(event->button() & Qt::LeftButton) {
-        /* place tile at snapped point */
-        Tile tile(mTileSheetHandler.get(mTileSheetIndex)->getSfTileSheet(),
-                  mTileSheetIndex,
-                  mCurrentTileBounds,
-                  coords);
-
-        tile.setTileSheetCoords(sf::Vector2i(mCurrentTileBounds.left, mCurrentTileBounds.top));
-        tile.setDimensions(sf::Vector2i(tileWidth, tileHeight));
-
-        std::cout << "assignment operator" << std::endl;
-        mTiles[coords] = tile;
-        mSelectedTile = &(mTiles[coords]);
-        mTileMap.addTile(mTiles[coords]);
+        addTile(mouseX, mouseY);
     }
 
     else if(event->button() & Qt::RightButton) {
+        sf::Vector2i coords = getCoordsFromMouse(mouseX, mouseY);
+
+        /* find tile */
+        auto tile = mTiles.find(coords);
+
         /* select tile */
         if(tile != mTiles.end()) {
             mSelectedTile = &(tile->second);
@@ -163,6 +176,11 @@ void MyCanvas::mousePressEvent(QMouseEvent* event)
     }
 
     emit clicked();
+}
+
+void MyCanvas::mouseMoveEvent(QMouseEvent *event)
+{
+    addTile(event->pos().x(), event->pos().y());
 }
 
 const TileMap& MyCanvas::getTileMap() const

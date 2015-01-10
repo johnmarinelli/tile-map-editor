@@ -35,6 +35,9 @@ private:
     void onInit();
     void onUpdate();
 
+    sf::Vector2i getCoordsFromMouse(int mouseX, int mouseY);
+    void addTile(int mouseX, int mouseY);
+
     typedef std::unordered_map<sf::Vector2<int>, Tile, Vector2iHash> TilesMap;
 
     sf::Texture mTilesheet;
@@ -91,6 +94,7 @@ private slots:
 
 protected:
     void mousePressEvent(QMouseEvent* event);
+    void mouseMoveEvent(QMouseEvent* event);
 
 };
 

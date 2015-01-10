@@ -4,15 +4,13 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
-
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 4): QT += core gui widgets
 
 QMAKE_CXXFLAGS += -std=c++11
 LIBS += -L/home/john/Documents/cpp/qt2/SFML/build/lib -lsfml-graphics -lsfml-window -lsfml-system
 LIBS += -L/usr/include/X11 -lX11
 
-TARGET = tme-1
+TARGET = tme-2
 TEMPLATE = app
 
 SOURCES += main.cpp\
@@ -30,7 +28,8 @@ SOURCES += main.cpp\
     utility.cpp \
     jsoncpp.cpp \
     currenttileframe.cpp \
-    canvasframe.cpp
+    canvasframe.cpp \
+    tileselecttabwidget.cpp
 
 HEADERS  += mainwindow.h \
     qsfmlcanvas.h \
@@ -47,7 +46,8 @@ HEADERS  += mainwindow.h \
     json/json.h \
     json/json-forwards.h \
     currenttileframe.h \
-    canvasframe.h
+    canvasframe.h \
+    tileselecttabwidget.h
 
 FORMS    += \
     mainwindow.ui
