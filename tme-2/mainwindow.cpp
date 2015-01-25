@@ -37,14 +37,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->centralwidget->setLayout(mLayout);
 
-    mTileSelector = new TileSelectTabWidget(ui->centralwidget);
+    mTileSelector = new TileSelectTabWidget(mWindowWidth, mWindowHeight, ui->centralwidget);
 
-    resizeTileSelect();
     createNewCanvasArea();
     mCurrentTileFrame = new CurrentTileFrame(this);
     resizeCurrentTileFrame();
 
-    //setTileSheetTabs();
     mTileSelector->setTabs(mTileSheetHandler, *mCanvasFrame->getCanvas());
 
     mLayout->addWidget(mCurrentTileFrame, 0, 1, 1, 1);
@@ -262,12 +260,6 @@ void MainWindow::resizeCurrentTileFrame()
 {
     mCurrentTileFrame->resize(mWindowWidth / 3, mWindowHeight / 3);
     mCurrentTileFrame->setMinimumHeight(mWindowHeight / 3);
-}
-
-void MainWindow::resizeTileSelect()
-{
-    //ui->tileSheetTabs->resize(mWindowWidth / 3, mWindowHeight / 2);
-    mTileSelector->resize(mWindowWidth / 3, mWindowHeight / 2);
 }
 
 void MainWindow::resizeSFMLFrame(QFrame* frame)

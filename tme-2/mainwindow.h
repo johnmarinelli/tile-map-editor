@@ -32,7 +32,6 @@ public:
     void setTileSelectLayout(QScrollArea* scrollArea, QWidget* scrollAreaContents, const std::shared_ptr<const TileSheet>& tileSheet);
 
     void resizeCurrentTileFrame();
-    void resizeTileSelect();
     void resizeSFMLFrame(QFrame* frame);
 
     ~MainWindow();

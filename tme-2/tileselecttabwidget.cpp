@@ -11,6 +11,14 @@ TileSelectTabWidget::TileSelectTabWidget(QWidget *parent) :
     connect(this, SIGNAL(currentChanged(int)), this, SLOT(setCurrentTabIndex(int)));
 }
 
+TileSelectTabWidget::TileSelectTabWidget(int windowWidth, int windowHeight, QWidget *parent) :
+    QTabWidget(parent),
+    mCurrentTabIndex(0)
+{
+    resize(windowWidth / 3, windowHeight / 2);
+    connect(this, SIGNAL(currentChanged(int)), this, SLOT(setCurrentTabIndex(int)));
+}
+
 void TileSelectTabWidget::setTabLayout(QScrollArea *scrollArea, QWidget *scrollAreaContents, const std::shared_ptr<const TileSheet> &tileSheet, MyCanvas& canvas)
 {
     int tileSheetCols = tileSheet->getColumns();

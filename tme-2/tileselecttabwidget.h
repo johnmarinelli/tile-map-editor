@@ -17,6 +17,7 @@ private:
     Q_OBJECT
 public:
     explicit TileSelectTabWidget(QWidget* parent = 0);
+    TileSelectTabWidget(int windowWidth, int windowHeight, QWidget* parent = 0);
 
     int getCurrentTabIndex() const;
     void setTabs(TileSheetHandler& tsh, MyCanvas& canvas);
