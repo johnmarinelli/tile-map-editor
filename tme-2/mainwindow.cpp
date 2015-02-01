@@ -63,6 +63,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     /* connect save map */
     connect(ui->saveMapAction, SIGNAL(triggered()), this, SLOT(saveMap()));
+
+    /* connect selection mode to canvas */
+    connect(ui->actionSelectionMode, SIGNAL(toggled(bool)), mCanvasFrame->getCanvas(), SLOT(setSelectionMode(bool)));
 }
 
 void MainWindow::setTileSheetTabs()

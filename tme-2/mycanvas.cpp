@@ -14,7 +14,8 @@ MyCanvas::MyCanvas(QWidget *parent,
     mTileSheetHandler(tileSheetHandler),
     mTileSheetIndex(0),
     mSelectedTile(nullptr),
-    mTileMap(tileWidth, tileHeight, size.width(), size.height())
+    mTileMap(tileWidth, tileHeight, size.width(), size.height()),
+    mSelectionMode(false)
 {
     setLines();
 
@@ -67,6 +68,7 @@ void MyCanvas::setLines()
         int x = i * mTileMap.getTileHeight();
         Line line(x, 0, x, size.height());
         line.mLine[0].color = sf::Color::Black;
+        line.mLine[1].color = sf::Color::Black;
         mGridLines.push_back(line);
     }
 
@@ -75,6 +77,7 @@ void MyCanvas::setLines()
         int y = j * mTileMap.getTileWidth();
         Line line(0, y, size.width(), y);
         line.mLine[0].color = sf::Color::Black;
+        line.mLine[1].color = sf::Color::Black;
         mGridLines.push_back(line);
     }
 }
@@ -115,6 +118,11 @@ void MyCanvas::setCurrentTile(const sf::Rect<int>& bounds, const std::shared_ptr
 void MyCanvas::setCurrentTileTraversable(bool traversable)
 {
     if(mSelectedTile) mSelectedTile->setTraversable(traversable);
+}
+
+void MyCanvas::setSelectionMode(bool selectionMode)
+{
+    mSelectionMode = selectionMode;
 }
 
 void MyCanvas::reset()

@@ -58,6 +58,8 @@ private:
 
     TileMap mTileMap;
 
+    bool mSelectionMode;
+
 public:
     MyCanvas(QWidget *parent,
              const QPoint& position,
@@ -88,6 +90,7 @@ signals:
 public slots:
     void setCurrentTile(const sf::Rect<int>& bounds, const std::shared_ptr<const TileSheet> tileSheet);
     void setCurrentTileSheetIndex(int index);
+    void setSelectionMode(bool selectionMode);
 
 private slots:
     void sendSelectedTile();

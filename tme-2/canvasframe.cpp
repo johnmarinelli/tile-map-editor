@@ -18,6 +18,7 @@ CanvasFrame::CanvasFrame(QWidget *parent) :
 
 void CanvasFrame::initCanvas(const QPoint &pos, const QSize &size, const TileSheetHandler &tsh, int tileWidth, int tileHeight)
 {
+    if(mCanvas) delete mCanvas;
     mCanvas = new MyCanvas(mScrollAreaWidget, pos, size, tsh, tileWidth, tileHeight);
     mCanvas->setObjectName("canvas");
     mCanvas->setLines();
