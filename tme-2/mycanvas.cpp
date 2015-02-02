@@ -15,7 +15,9 @@ MyCanvas::MyCanvas(QWidget *parent,
     mTileSheetIndex(0),
     mSelectedTile(nullptr),
     mTileMap(tileWidth, tileHeight, size.width(), size.height()),
-    mSelectionMode(false)
+    mSelectionMode(false),
+    mStartX(0),
+    mStartY(0)
 {
     setLines();
 
@@ -165,22 +167,28 @@ void MyCanvas::mousePressEvent(QMouseEvent* event)
     int mouseX = event->pos().x();
     int mouseY = event->pos().y();
 
-    if(event->button() & Qt::LeftButton) {
-        addTile(mouseX, mouseY);
-    }
-
-    else if(event->button() & Qt::RightButton) {
-        sf::Vector2i coords = getCoordsFromMouse(mouseX, mouseY);
-
-        /* find tile */
-        auto tile = mTiles.find(coords);
-
-        /* select tile */
-        if(tile != mTiles.end()) {
-            mSelectedTile = &(tile->second);
-            //mTileMap.removeTile(&(tile->second));
-            //mTiles.erase(tile);
+    if(!mSelectionMode) {
+        if(event->button() & Qt::LeftButton) {
+            addTile(mouseX, mouseY);
         }
+
+        else if(event->button() & Qt::RightButton) {
+            sf::Vector2i coords = getCoordsFromMouse(mouseX, mouseY);
+
+            /* find tile */
+            auto tile = mTiles.find(coords);
+
+            /* select tile */
+            if(tile != mTiles.end()) {
+                mSelectedTile = &(tile->second);
+                //mTileMap.removeTile(&(tile->second));
+                //mTiles.erase(tile);
+            }
+        }
+    }
+    else {
+        mStartX = mouseX;
+        mStartY = mouseY;
     }
 
     emit clicked();
@@ -188,7 +196,36 @@ void MyCanvas::mousePressEvent(QMouseEvent* event)
 
 void MyCanvas::mouseMoveEvent(QMouseEvent *event)
 {
-    addTile(event->pos().x(), event->pos().y());
+    if(!mSelectionMode) {
+        addTile(event->pos().x(), event->pos().y());
+    }
+}
+
+void MyCanvas::mouseReleaseEvent(QMouseEvent *event)
+{
+    int endX = event->pos().x();
+    int endY = event->pos().y();
+
+    if(mSelectionMode) {
+        mSelectedTiles.clear();
+
+        int x = std::min(mStartX, endX);
+        int y = std::min(mStartY, endY);
+        QRect roi(x, y, std::abs(endX-mStartX), std::abs(endY-mStartY));
+
+        /* get all tiles within roi */
+        for(auto& kv : mTiles) {
+            const auto& pos = kv.first;
+            auto& tile = kv.second;
+
+            QRect r(pos.x, pos.y, mTileMap.getTileWidth(), mTileMap.getTileHeight());
+            if(roi.intersects(r)) {
+                mSelectedTiles.push_back(&tile);
+            }
+        }
+
+        std::cout << mSelectedTiles.size() << std::endl;
+    }
 }
 
 const TileMap& MyCanvas::getTileMap() const

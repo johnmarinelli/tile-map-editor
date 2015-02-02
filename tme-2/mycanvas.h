@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <QMouseEvent>
 #include <memory>
+#include <deque>
 
 /*
  * functor to hash keys.
@@ -60,6 +61,10 @@ private:
 
     bool mSelectionMode;
 
+    int mStartX, mStartY;
+
+    std::deque<Tile*> mSelectedTiles;
+
 public:
     MyCanvas(QWidget *parent,
              const QPoint& position,
@@ -67,6 +72,7 @@ public:
              const TileSheetHandler& tileSheetHandler,
              const int tileWidth,
              const int tileHeight);
+
     MyCanvas(const MyCanvas& other) = delete;
     MyCanvas& operator=(const MyCanvas& rhs) = delete;
 
@@ -98,6 +104,7 @@ private slots:
 protected:
     void mousePressEvent(QMouseEvent* event);
     void mouseMoveEvent(QMouseEvent* event);
+    void mouseReleaseEvent(QMouseEvent* event);
 
 };
 
