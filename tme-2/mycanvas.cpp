@@ -119,7 +119,14 @@ void MyCanvas::setCurrentTile(const sf::Rect<int>& bounds, const std::shared_ptr
 
 void MyCanvas::setCurrentTileTraversable(bool traversable)
 {
-    if(mSelectedTile) mSelectedTile->setTraversable(traversable);
+    if(!mSelectionMode) {
+        if(mSelectedTile) mSelectedTile->setTraversable(traversable);
+    }
+    else {
+        for(const auto& tile : mSelectedTiles) {
+            tile->setTraversable(traversable);
+        }
+    }
 }
 
 void MyCanvas::setSelectionMode(bool selectionMode)
@@ -198,6 +205,10 @@ void MyCanvas::mouseMoveEvent(QMouseEvent *event)
 {
     if(!mSelectionMode) {
         addTile(event->pos().x(), event->pos().y());
+    }
+    else {
+        // TODO:
+        // draw rectangle to show what's being selected
     }
 }
 
