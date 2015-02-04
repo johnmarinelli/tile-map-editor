@@ -16,6 +16,7 @@ MyCanvas::MyCanvas(QWidget *parent,
     mSelectedTile(nullptr),
     mTileMap(tileWidth, tileHeight, size.width(), size.height()),
     mSelectionMode(false),
+    mSelectedRegion(QRect()),
     mStartX(0),
     mStartY(0)
 {
@@ -106,6 +107,17 @@ void MyCanvas::onUpdate()
         /* for some reason using Qt5, this breaks */
         draw(tile.second.getSprite());
     }
+
+    if(mSelectionMode) {
+        sf::RectangleShape selectedRect;
+        selectedRect.setSize(sf::Vector2<float>(mSelectedRegion.width(), mSelectedRegion.height()));
+        selectedRect.setOutlineColor(sf::Color::Blue);
+        selectedRect.setOutlineThickness(5.5f);
+        selectedRect.setFillColor(sf::Color(0, 0, 255, 128));
+        selectedRect.setPosition(mSelectedRegion.x(), mSelectedRegion.y());
+
+        draw(selectedRect);
+    }
 }
 
 void MyCanvas::setCurrentTile(const sf::Rect<int>& bounds, const std::shared_ptr<const TileSheet> tileSheet)
@@ -132,6 +144,13 @@ void MyCanvas::setCurrentTileTraversable(bool traversable)
 void MyCanvas::setSelectionMode(bool selectionMode)
 {
     mSelectionMode = selectionMode;
+
+    /* if selection mode gets turned off, reset the selected region */
+    if(!selectionMode) {
+        mSelectedRegion.setSize(QSize(0,0));
+        mSelectedRegion.setLeft(0);
+        mSelectedRegion.setTop(0);
+    }
 }
 
 void MyCanvas::reset()
@@ -142,6 +161,7 @@ void MyCanvas::reset()
     mSelectedTile = nullptr;
     mTileSheetIndex = 0;
     mCurrentTileBounds = sf::Rect<int>();
+    mSelectionMode = false;
     this->move(0, 0);
     this->resize(0, 0);
 }
@@ -207,8 +227,10 @@ void MyCanvas::mouseMoveEvent(QMouseEvent *event)
         addTile(event->pos().x(), event->pos().y());
     }
     else {
-        // TODO:
-        // draw rectangle to show what's being selected
+        int endX = event->pos().x();
+        int endY = event->pos().y();
+
+        mSelectedRegion = getROI(mStartX, mStartY, endX, endY);
     }
 }
 
@@ -219,10 +241,7 @@ void MyCanvas::mouseReleaseEvent(QMouseEvent *event)
 
     if(mSelectionMode) {
         mSelectedTiles.clear();
-
-        int x = std::min(mStartX, endX);
-        int y = std::min(mStartY, endY);
-        QRect roi(x, y, std::abs(endX-mStartX), std::abs(endY-mStartY));
+        mSelectedRegion = getROI(mStartX, mStartY, endX, endY);
 
         /* get all tiles within roi */
         for(auto& kv : mTiles) {
@@ -230,7 +249,7 @@ void MyCanvas::mouseReleaseEvent(QMouseEvent *event)
             auto& tile = kv.second;
 
             QRect r(pos.x, pos.y, mTileMap.getTileWidth(), mTileMap.getTileHeight());
-            if(roi.intersects(r)) {
+            if(mSelectedRegion.intersects(r)) {
                 mSelectedTiles.push_back(&tile);
             }
         }

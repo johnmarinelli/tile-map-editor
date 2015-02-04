@@ -31,4 +31,9 @@ inline const char* boolToString(bool b)
  */
 void removeLayout(QLayout* layout);
 
+inline QRect getROI(int startX, int startY, int endX, int endY)
+{
+    return QRect(std::min(startX, endX), std::min(startY, endY), std::abs(endX-startX), std::abs(endY-startY));
+}
+
 #endif // UTILITY_H

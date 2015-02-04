@@ -60,7 +60,7 @@ private:
     TileMap mTileMap;
 
     bool mSelectionMode;
-
+    QRect mSelectedRegion;
     int mStartX, mStartY;
 
     std::deque<Tile*> mSelectedTiles;
